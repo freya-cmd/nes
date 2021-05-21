@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include "olc6502.h"
 
 class Bus
 {
@@ -7,6 +8,10 @@ class Bus
         Bus();
          ~Bus();
 
+public:
+    olc6502 cpu;
+
+    std::array<uint8_t, 64 * 1024> ram;
 
 public: 
     void write(uint16_t addr, uint8_t data);
