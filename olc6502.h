@@ -54,6 +54,19 @@ public:
 	uint8_t STX();	uint8_t STY();	uint8_t TAX();	uint8_t TAY();
 	uint8_t TSX();	uint8_t TXA();	uint8_t TXS();	uint8_t TYA();
 
+    uint8_t XXX();
+
+    void clock();
+    void reset();
+    void irq();
+    void nmi();
+
+    uint8_t fetch();
+    uint8_t fetched = 0x00;
+    uint16_t addr_abs = 0x0000;
+    uint16_t addr_rel = 0x00;
+    uint8_t opcode = 0x00;
+    uint8_t cycles = 0;
 
 private:
     Bus     *bus = nullptr;
