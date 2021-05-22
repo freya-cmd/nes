@@ -38,3 +38,17 @@ void olc6502::write(uint16_t a, uint8_t d)
 {
         bus->write(a, d);
 }
+
+void olc6502::clock()
+{
+        if (cycles == 0)
+        {
+                opcode = read(pc);
+                pc++;
+
+                cycles = lookup[opcode].cycles;
+
+                (this->*lookup[opcode].addrmode)();
+                (this->*lookup[opcode].operate)();
+        }
+}
