@@ -1,4 +1,10 @@
 #pragma once
+#include <vector>
+#include <string>
+#include <map>
+#ifdef LOGMODE
+#include <stdio.h>
+#endif
 
 class Bus;
 
@@ -12,7 +18,7 @@ public:
     enum FLAGS6502
     {
         C = (1 << 0),
-        Z = (1 << 1).
+        Z = (1 << 1),
         I = (1 << 2),
         D = (1 << 3),
         B = (1 << 4),
@@ -84,4 +90,5 @@ private:
 		uint8_t  cycles = 0;
 	};
 
+    std::vector<INSTRUCTION> lookup;
 };
