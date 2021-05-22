@@ -48,7 +48,10 @@ void olc6502::clock()
 
                 cycles = lookup[opcode].cycles;
 
-                (this->*lookup[opcode].addrmode)();
-                (this->*lookup[opcode].operate)();
+                uint8_t additional_cycle1 = (this->*lookup[opcode].addrmode)();
+                uint8_t additional_cycle2 = (this->*lookup[opcode].operate)();
+
+                cycles += (additional_cycle1 & additional_cycle2);
         }
+        cycles--;
 }
