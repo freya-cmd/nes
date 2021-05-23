@@ -34,8 +34,9 @@ public:
 	uint16_t pc     = 0x0000;
 	uint8_t  status = 0x00;		
 
-
+    bool complete();
     void ConnectBus(Bus *n) { bus = n; }
+    std::map<uint16_t, std::string> disassemble(uint16_t nStart, uint16_t nStop);
 
 	uint8_t IMP();	uint8_t IMM();	
 	uint8_t ZP0();	uint8_t ZPX();	

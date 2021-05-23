@@ -758,3 +758,346 @@ uint8_t olc6502::LSR()
 		write(addr_abs, temp & 0x00FF);
 	return 0;
 }
+
+uint8_t olc6502::NOP()
+{
+	// Sadly not all NOPs are equal, Ive added a few here
+	// based on https://wiki.nesdev.com/w/index.php/CPU_unofficial_opcodes
+	// and will add more based on game compatibility, and ultimately
+	// I'd like to cover all illegal opcodes too
+	switch (opcode) {
+	case 0x1C:
+	case 0x3C:
+	case 0x5C:
+	case 0x7C:
+	case 0xDC:
+	case 0xFC:
+		return 1;
+		break;
+	}
+	return 0;
+}
+
+
+// Instruction: Bitwise Logic OR
+// Function:    A = A | M
+// Flags Out:   N, Z
+uint8_t olc6502::ORA()
+{
+	fetch();
+	a = a | fetched;
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
+	return 1;
+}
+
+
+// Instruction: Push Accumulator to Stack
+// Function:    A -> stack
+uint8_t olc6502::PHA()
+{
+	write(0x0100 + stkp, a);
+	stkp--;
+	return 0;
+}
+
+
+// Instruction: Push Status Register to Stack
+// Function:    status -> stack
+// Note:        Break flag is set to 1 before push
+uint8_t olc6502::PHP()
+{
+	write(0x0100 + stkp, status | B | U);
+	SetFlag(B, 0);
+	SetFlag(U, 0);
+	stkp--;
+	return 0;
+}
+
+
+// Instruction: Pop Accumulator off Stack
+// Function:    A <- stack
+// Flags Out:   N, Z
+uint8_t olc6502::PLA()
+{
+	stkp++;
+	a = read(0x0100 + stkp);
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
+	return 0;
+}
+
+
+// Instruction: Pop Status Register off Stack
+// Function:    Status <- stack
+uint8_t olc6502::PLP()
+{
+	stkp++;
+	status = read(0x0100 + stkp);
+	SetFlag(U, 1);
+	return 0;
+}
+
+uint8_t olc6502::ROL()
+{
+	fetch();
+	temp = (uint16_t)(fetched << 1) | GetFlag(C);
+	SetFlag(C, temp & 0xFF00);
+	SetFlag(Z, (temp & 0x00FF) == 0x0000);
+	SetFlag(N, temp & 0x0080);
+	if (lookup[opcode].addrmode == &olc6502::IMP)
+		a = temp & 0x00FF;
+	else
+		write(addr_abs, temp & 0x00FF);
+	return 0;
+}
+
+uint8_t olc6502::ROR()
+{
+	fetch();
+	temp = (uint16_t)(GetFlag(C) << 7) | (fetched >> 1);
+	SetFlag(C, fetched & 0x01);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x0080);
+	if (lookup[opcode].addrmode == &olc6502::IMP)
+		a = temp & 0x00FF;
+	else
+		write(addr_abs, temp & 0x00FF);
+	return 0;
+}
+
+uint8_t olc6502::RTI()
+{
+	stkp++;
+	status = read(0x0100 + stkp);
+	status &= ~B;
+	status &= ~U;
+
+	stkp++;
+	pc = (uint16_t)read(0x0100 + stkp);
+	stkp++;
+	pc |= (uint16_t)read(0x0100 + stkp) << 8;
+	return 0;
+}
+
+uint8_t olc6502::RTS()
+{
+	stkp++;
+	pc = (uint16_t)read(0x0100 + stkp);
+	stkp++;
+	pc |= (uint16_t)read(0x0100 + stkp) << 8;
+	
+	pc++;
+	return 0;
+}
+
+
+
+uint8_t olc6502::SEC()
+{
+	SetFlag(C, true);
+	return 0;
+}
+
+
+uint8_t olc6502::SED()
+{
+	SetFlag(D, true);
+	return 0;
+}
+
+
+uint8_t olc6502::SEI()
+{
+	SetFlag(I, true);
+	return 0;
+}
+
+
+uint8_t olc6502::STA()
+{
+	write(addr_abs, a);
+	return 0;
+}
+
+uint8_t olc6502::STX()
+{
+	write(addr_abs, x);
+	return 0;
+}
+
+
+uint8_t olc6502::STY()
+{
+	write(addr_abs, y);
+	return 0;
+}
+
+
+uint8_t olc6502::TAX()
+{
+	x = a;
+	SetFlag(Z, x == 0x00);
+	SetFlag(N, x & 0x80);
+	return 0;
+}
+
+
+uint8_t olc6502::TAY()
+{
+	y = a;
+	SetFlag(Z, y == 0x00);
+	SetFlag(N, y & 0x80);
+	return 0;
+}
+
+
+
+uint8_t olc6502::TSX()
+{
+	x = stkp;
+	SetFlag(Z, x == 0x00);
+	SetFlag(N, x & 0x80);
+	return 0;
+}
+
+
+
+uint8_t olc6502::TXA()
+{
+	a = x;
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
+	return 0;
+}
+
+
+uint8_t olc6502::TXS()
+{
+	stkp = x;
+	return 0;
+}
+
+
+uint8_t olc6502::TYA()
+{
+	a = y;
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
+	return 0;
+}
+
+
+uint8_t olc6502::XXX()
+{
+	return 0;
+}
+
+bool olc6502::complete()
+{
+	return cycles == 0;
+}
+
+std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t nStop)
+{
+	uint32_t addr = nStart;
+	uint8_t value = 0x00, lo = 0x00, hi = 0x00;
+	std::map<uint16_t, std::string> mapLines;
+	uint16_t line_addr = 0;
+
+
+	auto hex = [](uint32_t n, uint8_t d)
+	{
+		std::string s(d, '0');
+		for (int i = d - 1; i >= 0; i--, n >>= 4)
+			s[i] = "0123456789ABCDEF"[n & 0xF];
+		return s;
+	};
+
+
+	while (addr <= (uint32_t)nStop)
+	{
+		line_addr = addr;
+
+
+		std::string sInst = "$" + hex(addr, 4) + ": ";
+
+
+		uint8_t opcode = bus->read(addr, true); addr++;
+		sInst += lookup[opcode].name + " ";
+
+	
+		if (lookup[opcode].addrmode == &olc6502::IMP)
+		{
+			sInst += " {IMP}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::IMM)
+		{
+			value = bus->read(addr, true); addr++;
+			sInst += "#$" + hex(value, 2) + " {IMM}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ZP0)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = 0x00;												
+			sInst += "$" + hex(lo, 2) + " {ZP0}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ZPX)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = 0x00;														
+			sInst += "$" + hex(lo, 2) + ", X {ZPX}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ZPY)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = 0x00;														
+			sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::IZX)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = 0x00;								
+			sInst += "($" + hex(lo, 2) + ", X) {IZX}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::IZY)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = 0x00;								
+			sInst += "($" + hex(lo, 2) + "), Y {IZY}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ABS)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = bus->read(addr, true); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + " {ABS}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ABX)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = bus->read(addr, true); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X {ABX}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ABY)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = bus->read(addr, true); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y {ABY}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::IND)
+		{
+			lo = bus->read(addr, true); addr++;
+			hi = bus->read(addr, true); addr++;
+			sInst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ") {IND}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::REL)
+		{
+			value = bus->read(addr, true); addr++;
+			sInst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "] {REL}";
+		}
+
+		mapLines[line_addr] = sInst;
+	}
+
+	return mapLines;
+}
