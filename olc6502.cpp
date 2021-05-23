@@ -761,10 +761,7 @@ uint8_t olc6502::LSR()
 
 uint8_t olc6502::NOP()
 {
-	// Sadly not all NOPs are equal, Ive added a few here
-	// based on https://wiki.nesdev.com/w/index.php/CPU_unofficial_opcodes
-	// and will add more based on game compatibility, and ultimately
-	// I'd like to cover all illegal opcodes too
+
 	switch (opcode) {
 	case 0x1C:
 	case 0x3C:
@@ -779,9 +776,7 @@ uint8_t olc6502::NOP()
 }
 
 
-// Instruction: Bitwise Logic OR
-// Function:    A = A | M
-// Flags Out:   N, Z
+
 uint8_t olc6502::ORA()
 {
 	fetch();
@@ -792,8 +787,6 @@ uint8_t olc6502::ORA()
 }
 
 
-// Instruction: Push Accumulator to Stack
-// Function:    A -> stack
 uint8_t olc6502::PHA()
 {
 	write(0x0100 + stkp, a);
@@ -802,9 +795,7 @@ uint8_t olc6502::PHA()
 }
 
 
-// Instruction: Push Status Register to Stack
-// Function:    status -> stack
-// Note:        Break flag is set to 1 before push
+
 uint8_t olc6502::PHP()
 {
 	write(0x0100 + stkp, status | B | U);
@@ -815,9 +806,6 @@ uint8_t olc6502::PHP()
 }
 
 
-// Instruction: Pop Accumulator off Stack
-// Function:    A <- stack
-// Flags Out:   N, Z
 uint8_t olc6502::PLA()
 {
 	stkp++;
