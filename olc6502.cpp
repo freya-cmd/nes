@@ -1,4 +1,5 @@
 #include "olc6502.h"
+#include "bus.h"
 
 olc6502::olc6502()
 {
@@ -38,6 +39,33 @@ void olc6502::write(uint16_t a, uint8_t d)
 {
         bus->write(a, d);
 }
+
+void olc6502::reset()
+{
+
+	addr_abs = 0xFFFC;
+	uint16_t lo = read(addr_abs + 0);
+	uint16_t hi = read(addr_abs + 1);
+
+
+	pc = (hi << 8) | lo;
+
+
+	a = 0;
+	x = 0;
+	y = 0;
+	stkp = 0xFD;
+	status = 0x00 | U;
+
+
+	addr_rel = 0x0000;
+	addr_abs = 0x0000;
+	fetched = 0x00;
+
+
+	cycles = 8;
+}
+
 
 void olc6502::clock()
 {
