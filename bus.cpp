@@ -1,7 +1,7 @@
 #include "bus.h"
 
 
-BBus::Bus()
+Bus::Bus()
 {
 
 	cpu.ConnectBus(this);
